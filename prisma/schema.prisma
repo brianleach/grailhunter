@@ -3,6 +3,53 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum ItemStatus {
+  WATCHING
+  ALERT
+  PURCHASED
+  SOLD
+  ARCHIVED
+}
+
+model Item {
+  id           String         @id @default(cuid())
+  name         String
+  source       String         @default("")
+  sourceUrl    String         @default("")
+  imageUrl     String         @default("")
+  category     String         @default("Other")
+  targetPrice  Float?
+  currentPrice Float?
+  status       ItemStatus     @default(WATCHING)
+  notes        String         @default("")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  priceHistory PriceHistory[]
+  activities   Activity[]
+}
+
+model PriceHistory {
+  id        String   @id @default(cuid())
+  price     Float
+  source    String   @default("")
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([itemId, createdAt])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  itemId    String?
+  item      Item?    @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
